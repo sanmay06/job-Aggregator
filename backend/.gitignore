@@ -1,0 +1,5 @@
+/env
+.vercel
+old code
+.env
+.env.*

@@ -1,0 +1,437 @@
+/* General Styling */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f7f7f7;
+    color: #333;
+}
+
+.center-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 600px;
+}
+
+h1, h3 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 24px;
+}
+
+h3 {
+    font-size: 18px;
+    color: #555;
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+form input[type="checkbox"] {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+form button {
+    padding: 10px 15px;
+    margin-right: 10px;
+    font-size: 14px;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+form button:hover {
+    background-color: #0056b3;
+}
+
+button {
+    padding: 10px 20px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table th, table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+}
+
+th {
+    background-color: #f1f1f1;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    margin-top: -10px;
+    margin-bottom: 16px;
+}
+
+.message {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Navbar Styling */
+.navbar {
+    background-color: #007bff;
+    padding: 10px 20px;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.navbar-links, .profiles {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.navbar-links li, .profiles li {
+    display: inline;
+}
+
+.navbar-links a {
+    text-decoration: none;
+    color: white;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.navbar-links a:hover {
+    color: #ffdd57;
+}
+
+.profiles button {
+    background-color: white;
+    color: #007bff;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.profiles button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.profiles button.edit {
+    background-color: #ff4d4d;
+    color: white;
+    border: 1px solid #ff4d4d;
+}
+
+.profiles button.edit:hover {
+    background-color: #cc0000;
+}
+
+.profiles li:last-child button {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 5px 10px;
+}
+
+/* Login Form Styling */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-card {
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-card h1 {
+    font-size: 24px;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.login-card label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.login-card input {
+    width: 95%;
+    padding: 10px;
+    margin-bottom: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.login-card input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.login-card button {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-card button:hover {
+    background-color: #0056b3;
+}
+
+.login-card .message {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.login-card hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 20px 0;
+}
+
+.login-card button[type="button"] {
+    background-color: #ddd;
+    color: #333;
+    margin-top: 10px;
+}
+
+.login-card button[type="button"]:hover {
+    background-color: #ccc;
+}
+
+/* Registration Form Styling */
+.reg-center-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.reg-card {
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.reg-card h1 {
+    font-size: 24px;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.reg-card label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.reg-card input {
+    width: 95%;
+    padding: 10px;
+    margin-bottom: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.reg-card input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.reg-card .error {
+    color: red;
+    font-size: 12px;
+    margin-bottom: 16px;
+}
+
+.reg-card button {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.reg-card button:hover {
+    background-color: #0056b3;
+}
+
+.reg-card .message {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* Profile Registration and Edit Form Styling */
+.profiles-regandedit {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 20px auto;
+}
+
+.profiles-regandedit form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.profiles-regandedit input[type="text"], 
+.profiles-regandedit input[type="submit"] {
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.profiles-regandedit input[type="text"]:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.profiles-regandedit button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.profiles-regandedit button:hover {
+    background-color: #0056b3;
+}
+
+.profiles-regandedit .PriceSlider {
+    margin: 10px 0;
+}
+
+.profiles-regandedit div {
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* Error Section Styling */
+.error {
+    background-color: #ffe5e5;
+    color: #d9534f;
+    border: 1px solid #d9534f;
+    border-radius: 4px;
+    padding: 10px;
+    text-align: center;
+    max-width: 400px;
+    margin: 20px auto;
+}
+
+.error a {
+    color: #d9534f;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.error a:hover {
+    text-decoration: none;
+}
