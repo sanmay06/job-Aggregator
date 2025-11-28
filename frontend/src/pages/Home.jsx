@@ -11,20 +11,21 @@ function Home() {
     const [id, setId] = useState(null);
     const param = useParams();
     const [profiles, setProfiles] = useState();
-    
+
     useEffect(() => {
-      document.title = "home";
+        document.title = "home";
     }, []);
 
     useEffect(() => {
         if (param.id) {
             setId(param.id);
         } else {
-            api.get(`/profile?user=${user}`)
+            api.get(`/getprofiles?user=${user}`)
                 .then((response) => {
-                    setProfiles(response.data || []);
-                    if (response.data && response.data.length > 0) {
-                        setId(response.data[0]);
+                    const names = response.data.names || [];
+                    setProfiles(names);
+                    if (names.length > 0) {
+                        setId(names[0]);
                     }
                 })
                 .catch((error) => {
@@ -35,7 +36,7 @@ function Home() {
 
     return (
         <section>
-            <NavBar home={true}/>
+            <NavBar home={true} />
             {profiles && profiles.length === 0 ? (
                 <p>No profiles found. Try creating a new one.</p>
             ) : (

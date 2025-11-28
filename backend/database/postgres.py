@@ -31,7 +31,7 @@ class Login(db.Model):
 
 class Profiles(db.Model):
     __tablename__ = 'profiles'
-    id = db.Column(db.Integer, primary_key=True, autautoincrement=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(20))
     username = db.Column(db.String(20), db.ForeignKey('login.username'))
     internshalla = db.Column(db.Boolean, default=False)

@@ -105,26 +105,7 @@ def adzuna(title, location):
                 continue
     return jobs_list
 
-def times_job(title, location):
-    jobs_list = []
-    base_url = "https://www.timesjobs.com/candidate/job-search.html"
-    response = requests.get(f"{base_url}?searchType=personalizedSearch&from=submit&txtKeywords={title}&txtLocation={location}")
-    soup = BeautifulSoup(response.text, 'html.parser')
-    cards = soup.find_all('li', class_='clearfix')
 
-    for card in cards:
-        try:
-            job_title = card.find('a').text.strip()
-            job_company_name = card.find('h3', class_='joblist-comp-name').text.strip()
-            salary_tag = card.find('span', class_='salary')
-            job_salary = salary_tag.text.strip() if salary_tag else "Not specified"
-            job_location = card.find('li', 'srp-zindex').text.strip()
-            job_url = "https://www.timesjobs.com/" + card.find('a')['href']
-
-            jobs_list.extend(addDB(title, job_title, job_company_name, job_location, job_salary, job_url, 'TimesJobs'))
-        except AttributeError:
-            continue
-    return jobs_list
 
 def jobRapido(title, location):
     jobs_list = []

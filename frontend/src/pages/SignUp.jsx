@@ -10,20 +10,20 @@ function SignIn() {
 
     async function SignUp(event) {
         event.preventDefault();
-        await api.post("/reg", { 'email':event.target.email.value.trim(), 'username': event.target.username.value.trim(), 'password': event.target.password.value.trim() } )
-        .then(response => setmsg(response.data.msg)).catch(e => console.log(e)) 
+        await api.post("/reg", { 'email': event.target.email.value.trim(), 'username': event.target.username.value.trim(), 'password': event.target.password.value.trim() })
+            .then(response => setmsg(response.data.msg)).catch(e => console.log(e))
         setError("");
         // setmsg("Account created successfully!");
     }
-    
-    useEffect(()=>{
+
+    useEffect(() => {
         if (pass !== conPass)
             setmsg("password doesnt match");
-        else if(conPass === "")
+        else if (conPass === "")
             setmsg("");
         else
             setmsg("");
-    },[conPass])
+    }, [conPass, pass])
 
     return (
         <div className="reg-center-container">
@@ -46,7 +46,7 @@ function SignIn() {
                     type="password"
                     name="confirmPassword"
                     value={conPass}
-                    onChange={(e) => {setConPass(e.target.value)}}
+                    onChange={(e) => { setConPass(e.target.value) }}
                     required
                 />
                 {error && <p className="error">{error}</p>}

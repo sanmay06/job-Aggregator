@@ -2,7 +2,7 @@ from flask import Flask, request
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-from jobs import internshala, adzuna, times_job, jobRapido
+from jobs import internshala, adzuna, jobRapido
 
 import db  # AUTO-SWITCHING DB BACKEND
 
@@ -90,7 +90,6 @@ def postProfile():
         "max": data["max"],
         "internshalla": "Internshalla" in sites,
         "adzuna": "Adzuna" in sites,
-        "timesjob": "TimesJobs" in sites,
         "jobrapido": "JobRapido" in sites
     }
 
@@ -104,6 +103,7 @@ def postProfile():
 @app.post("/profile/<profile>/update")
 def updateProfile(profile):
     data = request.get_json()
+    print("[DEBUG] updateProfile received data:", data)
     sites = data["sites"]
 
     new_data = {
@@ -114,12 +114,11 @@ def updateProfile(profile):
         "max": data["max"],
         "internshalla": "Internshalla" in sites,
         "adzuna": "Adzuna" in sites,
-        "timesjob": "TimesJobs" in sites,
         "jobrapido": "JobRapido" in sites
     }
 
     updated = update_profile(data["user"], profile, new_data)
-
+    print("[DEBUG] update_profile returned:", updated)
     if not updated:
         return {"msg": "Profile not found"}, 404
 
@@ -140,15 +139,15 @@ def scrape(site, profile):
     if not p.get(site):
         return {"msg": "Site disabled"}, 200
 
+    print(f"Scraping {site} for {profile}...")
     if site == "internshala":
         jobs = internshala(p["search"], p["location"])
     elif site == "adzuna":
         jobs = adzuna(p["search"], p["location"])
-    elif site == "timesjob":
-        jobs = times_job(p["search"], p["location"])
     else:
         jobs = jobRapido(p["search"], p["location"])
 
+    print(f"Found {len(jobs)} jobs from {site}")
     for job in jobs:
         insert_job(job)
 
@@ -170,7 +169,6 @@ def pages(profile):
             w for w, enabled in {
                 "Internshala": p["internshalla"],
                 "Adzuna": p["adzuna"],
-                "TimesJobs": p["timesjob"],
                 "JobRapido": p["jobrapido"],
             }.items() if enabled
         ]
@@ -178,7 +176,7 @@ def pages(profile):
 
     total = count_jobs(filters)
     pages = (total + 99) // 100
-
+    print(pages)
     return {"pages": pages}, 200
 
 

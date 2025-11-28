@@ -11,10 +11,13 @@ function Table(props) {
     const [website, setwebsite] = useState(false);
     const [jobs, setjobs] = useState([]);
     const [status, setstatus] = useState(false);
-    const [order, setorder] = useState("none");
     const [msg, setmsg] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
     const jobsPerPage = 30;
+
+    useEffect(() => {
+        console.log(jobs);
+    }, [jobs]);
 
     function ordering(o) {
         const sortedJobs = [...jobs];
@@ -24,12 +27,11 @@ function Table(props) {
             return o === "i" ? salaryA - salaryB : salaryB - salaryA;
         });
         setjobs(sortedJobs);
-        setorder(o);
         setCurrentPage(1); // Reset to first page on reorder
     }
 
     const scrapeAndFetchJobs = async (profile, user) => {
-        const sources = ["internshala", "adzuna", "timesjob", "jobrapido"];
+        const sources = ["internshala", "adzuna", "jobrapido"];
 
         try {
             await Promise.all(
@@ -48,18 +50,26 @@ function Table(props) {
                     const pages = await api.get(`/get_pages/${profile}?user=${user}`);
                     setmsg(prev => ({ ...prev, jobs: "fetching started" }));
                     const allJobs = [];
-
+                    console.log(pages.data.pages);
                     for (let i = 0; i < pages.data.pages; i++) {
-                        const resp = await api.get(`/fetch_jobs/${profile}/${i + 1}?user=${user}`);
-                        allJobs.push(...resp.data.jobs);
+                        try {
+                            const resp = await api.get(`/fetch_jobs/${profile}/${i + 1}?user=${user}`);
+                            if (resp.data && resp.data.jobs) {
+                                allJobs.push(...resp.data.jobs);
+                            }
+                        } catch (pageError) {
+                            console.log(`Error fetching page ${i + 1}:`, pageError);
+                        }
                     }
 
                     setjobs(allJobs);
                     setmsg(prev => ({ ...prev, jobs: "Jobs fetched successfully" }));
-                    setstatus(true);
                     setCurrentPage(1);
                 } catch (fetchError) {
                     console.log("Error fetching jobs:", fetchError);
+                    setmsg(prev => ({ ...prev, jobs: "Error fetching jobs" }));
+                } finally {
+                    setstatus(true);
                 }
             }, 5000);
         } catch (scrapeError) {
@@ -71,7 +81,7 @@ function Table(props) {
         if (props.profile) {
             scrapeAndFetchJobs(props.profile, user);
         }
-    }, [props.profile]);
+    }, [props.profile, user]);
 
     const printTable = () => {
         const fullTableRows = jobs.map((job, index) => {
@@ -80,7 +90,7 @@ function Table(props) {
                 : job.minsalary && job.maxsalary
                     ? `${job.minsalary} - ${job.maxsalary}`
                     : "N/A";
-    
+
             return `
                 <tr>
                     <td>${index + 1}</td>
@@ -93,7 +103,7 @@ function Table(props) {
                 </tr>
             `;
         }).join("");
-    
+
         const tableHeaders = `
             <tr>
                 <th>S.No</th>
@@ -105,7 +115,7 @@ function Table(props) {
                 ${website ? "<th>Website</th>" : ""}
             </tr>
         `;
-    
+
         const printWindow = window.open("", "_blank");
         printWindow.document.write(`
             <html>
@@ -129,7 +139,7 @@ function Table(props) {
         printWindow.document.close();
         printWindow.print();
     };
-    
+
 
     // Pagination Logic
     const indexOfLastJob = currentPage * jobsPerPage;

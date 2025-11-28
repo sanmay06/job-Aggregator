@@ -11,7 +11,7 @@ const PriceSlider = (props) => {
   useEffect(() => {
     min(priceRange[0]);
     max(priceRange[1]);
-  }, [priceRange]);
+  }, [priceRange, min, max]);
 
   // Sync priceRange state when minval or maxval props change
   useEffect(() => {
@@ -20,7 +20,7 @@ const PriceSlider = (props) => {
 
   // Handle slider value changes
   const handleChange = (event, newValue) => {
-    setPriceRange(newValue); 
+    setPriceRange(newValue);
   };
 
   return (
@@ -32,8 +32,8 @@ const PriceSlider = (props) => {
         value={priceRange}
         onChange={handleChange}
         valueLabelDisplay="auto"
-        min={0} 
-        max={100000} 
+        min={0}
+        max={100000}
         step={100}
       />
       <Typography variant="body1">

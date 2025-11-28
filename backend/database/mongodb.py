@@ -74,7 +74,7 @@ def update_profile(username, old_name, data):
         {"user": username, "name": old_name},
         {"$set": data}
     )
-    return result.modified_count > 0
+    return result.matched_count > 0
 
 
 # ---------------------------------------------------------
@@ -90,18 +90,33 @@ def insert_job(job):
 
 
 def count_jobs(filters):
-    return db.jobs.count_documents({
+    locations = [loc.strip().lower() for loc in filters["location"].split(",")]
+    query = {
         "title": filters["title"],
-        "location": filters["location"],
+        "location": {"$in": locations},
         "website": {"$in": filters["websites"]}
-    })
+    }
+    print(f"[DEBUG] count_jobs query: {query}")
+    count = db.jobs.count_documents(query)
+    print(f"[DEBUG] count_jobs result: {count}")
+    
+    # DEBUG: Check if ANY jobs exist for this title
+    any_title = db.jobs.count_documents({"title": filters["title"]})
+    print(f"[DEBUG] Jobs with title '{filters['title']}': {any_title}")
+    
+    # DEBUG: Check if ANY jobs exist for these locations
+    any_loc = db.jobs.count_documents({"location": {"$in": locations}})
+    print(f"[DEBUG] Jobs with locations {locations}: {any_loc}")
+
+    return count
 
 
 def fetch_jobs(filters, page, limit=100):
     skip = (page - 1) * limit
+    locations = [loc.strip().lower() for loc in filters["location"].split(",")]
     jobs = list(db.jobs.find({
         "title": filters["title"],
-        "location": filters["location"],
+        "location": {"$in": locations},
         "website": {"$in": filters["websites"]}
 
     }).skip(skip).limit(limit))
