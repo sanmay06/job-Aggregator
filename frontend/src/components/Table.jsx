@@ -31,7 +31,7 @@ function Table(props) {
     }
 
     const scrapeAndFetchJobs = async (profile, user) => {
-        const sources = ["internshala", "adzuna", "jobrapido"];
+        const sources = ["internshalla", "adzuna", "jobrapido"];
 
         try {
             await Promise.all(

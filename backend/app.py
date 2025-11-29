@@ -103,7 +103,7 @@ def postProfile():
 @app.post("/profile/<profile>/update")
 def updateProfile(profile):
     data = request.get_json()
-    print("[DEBUG] updateProfile received data:", data)
+    # print("[DEBUG] updateProfile received data:", data)
     sites = data["sites"]
 
     new_data = {
@@ -118,7 +118,7 @@ def updateProfile(profile):
     }
 
     updated = update_profile(data["user"], profile, new_data)
-    print("[DEBUG] update_profile returned:", updated)
+    # print("[DEBUG] update_profile returned:", updated)
     if not updated:
         return {"msg": "Profile not found"}, 404
 
@@ -136,11 +136,13 @@ def scrape(site, profile):
     if not p:
         return {"msg": "Profile not found"}, 404
 
+    print(site)
+
     if not p.get(site):
         return {"msg": "Site disabled"}, 200
 
     print(f"Scraping {site} for {profile}...")
-    if site == "internshala":
+    if site == "internshalla":
         jobs = internshala(p["search"], p["location"])
     elif site == "adzuna":
         jobs = adzuna(p["search"], p["location"])
@@ -176,7 +178,7 @@ def pages(profile):
 
     total = count_jobs(filters)
     pages = (total + 99) // 100
-    print(pages)
+    # print(pages)
     return {"pages": pages}, 200
 
 

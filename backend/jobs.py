@@ -65,6 +65,7 @@ def addDB(job, title, name, location, salary, url, website):
 
 def internshala(title, location):
     jobs_list = []
+    title = title.replace(" ", "-")
     for i in range(1, 2):
         response = requests.get(f"https://internshala.com/internships/{title}-internship-in-{location}/page-{i}/")
         # print(f"https://internshala.com/internships/{title}-internship-in-{location}/page-{i}/")
@@ -83,6 +84,7 @@ def internshala(title, location):
                 jobs_list.extend(addDB(title, job_title, job_company_name, job_location, job_salary, job_url, 'Internshala'))
             except AttributeError:
                 continue
+    print(f"Found {len(jobs_list)} jobs from internshala") 
     return jobs_list
 
 def adzuna(title, location):
@@ -107,22 +109,87 @@ def adzuna(title, location):
 
 
 
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+
 def jobRapido(title, location):
     jobs_list = []
-    base_url = "https://in.jobrapido.com"
-    for i in range(1, 2):
-        response = requests.get(f"{base_url}/{title}-jobs-in-{location}?p={i}")
-        soup = BeautifulSoup(response.text, 'html.parser')
-        cards = soup.find_all('div', class_='result-item')
+    
+    # 1. Setup Chrome Options (Headless = runs in background)
+    options = webdriver.ChromeOptions()
+    # options.add_argument('--headless') # Uncomment this if you don't want to see the browser pop up
+    options.add_argument('--disable-gpu')
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
+    # 2. Initialize the Browser
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+    # 3. Construct URL
+    # JobRapido uses specific query params
+    url = f"https://in.jobrapido.com/?w={title}&l={location}"
+    print(f"Opening Browser for: {url}")
+    
+    driver.get(url)
+
+    try:
+        # 4. CRITICAL: Wait for the "result-item" to actually load
+        # This solves the "Empty List" problem by waiting up to 10 seconds for data
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "result-item"))
+        )
+        
+        # 5. Find elements using Selenium's find_elements
+        cards = driver.find_elements(By.CLASS_NAME, "result-item")
+        print(f"Cards Found: {len(cards)}")
 
         for card in cards:
             try:
-                job_title = card.find('div', class_='result-item__title').text.strip()
-                job_company_name = card.find('div', class_='result-item__company').text.strip()
-                job_location = card.find('div', class_='result-item__location').text.strip()
-                job_url = card.find('a', class_='result-item__link')['href']
+                # Selenium uses 'find_element' (singular) on the card object
+                # Note: We use .get_attribute('href') for links
+                
+                # Get Link (The <a> tag class is usually 'result-item__link')
+                link_element = card.find_element(By.CLASS_NAME, "result-item__link")
+                job_url = link_element.get_attribute('href')
+                
+                # Get Title (It's often inside the link text or a span)
+                job_title = link_element.text.strip()
+                
+                # Get Company
+                try:
+                    job_company = card.find_element(By.CLASS_NAME, "result-item__company").text.strip()
+                except:
+                    job_company = "Confidential"
 
-                jobs_list.extend(addDB(title, job_title, job_company_name, job_location, None, job_url, 'JobRapido'))
-            except AttributeError:
+                # Get Location
+                try:
+                    job_salary = card.find_element(By.CLASS_NAME, "result-item__salary").text.strip()
+                except:
+                    job_salary = "Not Disclosed"
+                
+                try:
+                    job_location = card.find_element(By.CLASS_NAME, "result-item__location").text.strip()
+                except:
+                    job_location = location
+
+                print(f"Found: {job_title} | {job_company}")
+                
+                # Use addDB to format the job for the database
+                jobs_list.extend(addDB(title, job_title, job_company, job_location, job_salary, job_url, 'JobRapido'))
+
+            except Exception as e:
+                # print(f"Skipping a card: {e}")
                 continue
+
+    except Exception as main_e:
+        print(f"Main Error: {main_e}")
+    
+    finally:
+        # Close the browser when done
+        driver.quit()
+
     return jobs_list

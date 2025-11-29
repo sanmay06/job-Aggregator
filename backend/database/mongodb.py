@@ -96,17 +96,17 @@ def count_jobs(filters):
         "location": {"$in": locations},
         "website": {"$in": filters["websites"]}
     }
-    print(f"[DEBUG] count_jobs query: {query}")
+    # print(f"[DEBUG] count_jobs query: {query}")
     count = db.jobs.count_documents(query)
-    print(f"[DEBUG] count_jobs result: {count}")
+    # print(f"[DEBUG] count_jobs result: {count}")
     
     # DEBUG: Check if ANY jobs exist for this title
     any_title = db.jobs.count_documents({"title": filters["title"]})
-    print(f"[DEBUG] Jobs with title '{filters['title']}': {any_title}")
+    # print(f"[DEBUG] Jobs with title '{filters['title']}': {any_title}")
     
     # DEBUG: Check if ANY jobs exist for these locations
     any_loc = db.jobs.count_documents({"location": {"$in": locations}})
-    print(f"[DEBUG] Jobs with locations {locations}: {any_loc}")
+    # print(f"[DEBUG] Jobs with locations {locations}: {any_loc}")
 
     return count
 
