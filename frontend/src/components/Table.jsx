@@ -53,8 +53,12 @@ function Table(props) {
                     console.log(pages.data.pages);
                     for (let i = 0; i < pages.data.pages; i++) {
                         try {
-                            const resp = await api.get(`/fetch_jobs/${profile}/${i + 1}?user=${user}`);
+                            const resp = await api.get(`/fetch_jobs/${profile}/${i + 1}?user=${user}&_t=${Date.now()}`);
                             if (resp.data && resp.data.jobs) {
+                                console.log(`Page ${i + 1} fetched ${resp.data.jobs.length} jobs`);
+                                if (resp.data.jobs.length > 0) {
+                                    console.log(`Page ${i + 1} first job:`, resp.data.jobs[0].job_title);
+                                }
                                 allJobs.push(...resp.data.jobs);
                             }
                         } catch (pageError) {
@@ -62,8 +66,23 @@ function Table(props) {
                         }
                     }
 
-                    setjobs(allJobs);
                     setmsg(prev => ({ ...prev, jobs: "Jobs fetched successfully" }));
+
+                    // Check for duplicates
+                    if (allJobs.length > 30) {
+                        console.log("Checking for duplicates...");
+                        console.log("Job 0:", allJobs[0]?.job_title);
+                        console.log("Job 30:", allJobs[30]?.job_title);
+                        if (allJobs[0]?.job_title === allJobs[30]?.job_title) {
+                            console.error("DUPLICATE DATA DETECTED IN FRONTEND!");
+                        }
+                    }
+
+                    // Deduplicate jobs based on link or id
+                    const uniqueJobs = Array.from(new Map(allJobs.map(item => [item.link, item])).values());
+                    console.log(`Deduped jobs: ${uniqueJobs.length} (from ${allJobs.length})`);
+
+                    setjobs(uniqueJobs);
                     setCurrentPage(1);
                 } catch (fetchError) {
                     console.log("Error fetching jobs:", fetchError);
@@ -142,9 +161,17 @@ function Table(props) {
 
 
     // Pagination Logic
+    const [currentJobs, setCurrentJobs] = useState([]);
+
+
     const indexOfLastJob = currentPage * jobsPerPage;
     const indexOfFirstJob = indexOfLastJob - jobsPerPage;
-    const currentJobs = jobs.slice(indexOfFirstJob, indexOfLastJob);
+
+    useEffect(() => {
+        // setCurrentJobs(jobs.slice(indexOfFirstJob, indexOfLastJob));
+        setCurrentJobs(jobs);
+    }, [jobs, indexOfFirstJob, indexOfLastJob]);
+
 
     const nextPage = () => {
         if (indexOfLastJob < jobs.length) {
@@ -205,14 +232,14 @@ function Table(props) {
                         </tr>
                     </thead>
                     <tbody>
-                        {currentJobs.map((job, index) => {
+                        {currentJobs && currentJobs.map((job, index) => {
                             let sal = job.salary != null
                                 ? job.salary
                                 : job.minsalary && job.maxsalary
                                     ? `${job.minsalary} - ${job.maxsalary}`
                                     : "N/A";
                             return (
-                                <tr key={index}>
+                                <tr key={job.id || index}>
                                     <td>{indexOfFirstJob + index + 1}</td>
                                     <td hidden={!title}>{job.job_title || "N/A"}</td>
                                     <td hidden={!company}>{job.companyname || "N/A"}</td>

@@ -100,7 +100,7 @@ def adzuna(title, location):
                 job_title = card.find('a', class_='text-base').text.strip()
                 job_company_name = card.find('div', class_='ui-company').text.strip()
                 job_location = card.find('div', class_='ui-location').text.strip()
-                job_url = "https://www.adzuna.in/" + card.find('a', class_='text-adzuna-green-500')['href']
+                job_url = card.find('a', class_='text-adzuna-green-500')['href']
 
                 jobs_list.extend(addDB(title, job_title, job_company_name, job_location, "NA", job_url, 'Adzuna'))
             except AttributeError:
