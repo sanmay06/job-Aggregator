@@ -185,22 +185,29 @@ def insert_job(job):
 
 
 def count_jobs(filters):
+    locations = [loc.strip().lower() for loc in filters["location"].split(",")]
+    loc_conditions = [func.lower(Jobs.location) == loc for loc in locations]
+
     return Jobs.query.filter(
         Jobs.title == filters["title"],
-        Jobs.location == filters["location"],
+        or_(*loc_conditions),
         Jobs.website.in_(filters["websites"])
     ).count()
 
 
 def fetch_jobs(filters, page, limit=100):
+    locations = [loc.strip().lower() for loc in filters["location"].split(",")]
+    loc_conditions = [func.lower(Jobs.location) == loc for loc in locations]
+
     result = Jobs.query.filter(
         Jobs.title == filters["title"],
-        Jobs.location == filters["location"],
+        or_(*loc_conditions),
         Jobs.website.in_(filters["websites"])
-    ).paginate(page=page, per_page=limit)
+    ).order_by(Jobs.id.desc()).paginate(page=page, per_page=limit)
 
     return [
         {
+            "id": j.id,
             "job_title": j.job_title,
             "link": j.link,
             "title": j.title,
