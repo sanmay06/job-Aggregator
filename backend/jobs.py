@@ -65,46 +65,136 @@ def addDB(job, title, name, location, salary, url, website):
 
 def internshala(title, location):
     jobs_list = []
-    title = title.replace(" ", "-")
+    url_slug = title.replace(" ", "-")
+    original_title = title  # Preserve the original title for DB storage
+
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+
     for i in range(1, 2):
-        response = requests.get(f"https://internshala.com/internships/{title}-internship-in-{location}/page-{i}/")
-        # print(f"https://internshala.com/internships/{title}-internship-in-{location}/page-{i}/")
+        url = f"https://internshala.com/internships/{url_slug}-internship-in-{location}/page-{i}/"
+        # print(f"Fetching: {url}")
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != 200:
+            print(f"Internshala returned status {response.status_code}")
+            continue
+
         soup = BeautifulSoup(response.text, 'html.parser')
-        cards = soup.find_all('div', 'container-fluid')
+        cards = soup.find_all('div', 'individual_internship')
 
         for card in cards:
             try:
-                job_title = card.find('h3','job-internship-name').text.strip()
-                job_company_name = card.find('p','company-name').text.strip()
-                job_salary = card.find('span','stipend').text.strip()
-                location_tag = card.find('div', class_='row-1-item locations')
-                job_location = location_tag.text.strip() if location_tag else "Not specified"
-                job_url = "https://internshala.com/" + card.find('a', 'job-title-href')['href']
+                job_title_elem = card.find('h2', 'job-internship-name')
+                job_title = job_title_elem.text.strip() if job_title_elem else ""
 
-                jobs_list.extend(addDB(title, job_title, job_company_name, job_location, job_salary, job_url, 'Internshala'))
-            except AttributeError:
+                job_company_name_elem = card.find('p', 'company-name')
+                job_company_name = job_company_name_elem.text.strip() if job_company_name_elem else "Unknown"
+
+                job_salary_elem = card.find('span', 'stipend')
+                job_salary = job_salary_elem.text.strip() if job_salary_elem else "Not disclosed"
+
+                location_tag = card.find('div', class_='locations')
+                job_location = location_tag.text.strip() if location_tag else location
+
+                job_url_elem = card.find('a', 'job-title-href')
+                job_url = "https://internshala.com/" + job_url_elem['href'].lstrip('/') if job_url_elem and job_url_elem.has_attr('href') else ""
+
+                if not job_title or not job_url:
+                    continue
+
+                jobs_list.extend(addDB(original_title, job_title, job_company_name, job_location, job_salary, job_url, 'Internshala'))
+            except Exception as e:
+                # print(f"Error parsing card: {e}")
                 continue
-    print(f"Found {len(jobs_list)} jobs from internshala") 
+
+    print(f"Found {len(jobs_list)} jobs from internshala")
     return jobs_list
 
 def adzuna(title, location):
     jobs_list = []
-    base_url = "https://www.adzuna.in/search"
-    for i in range(1, 2):
-        response = requests.get(f"{base_url}?&q={title}&p={i}&w={location}")
-        soup = BeautifulSoup(response.text, 'html.parser')
-        cards = soup.find_all('article', class_='a')
 
-        for card in cards:
-            try:
-                job_title = card.find('a', class_='text-base').text.strip()
-                job_company_name = card.find('div', class_='ui-company').text.strip()
-                job_location = card.find('div', class_='ui-location').text.strip()
-                job_url = card.find('a', class_='text-adzuna-green-500')['href']
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Cache-Control': 'no-cache',
+    }
 
-                jobs_list.extend(addDB(title, job_title, job_company_name, job_location, "NA", job_url, 'Adzuna'))
-            except AttributeError:
+    url_slug_title = title.replace(" ", "-").lower()
+    url_slug_location = location.replace(" ", "-").lower()
+
+    for page in range(1, 3):
+        url = f"https://www.adzuna.in/search/{url_slug_title}/{url_slug_location}?p={page}"
+        print(f"Fetching Adzuna: {url}")
+
+        try:
+            response = requests.get(url, headers=headers, timeout=20, allow_redirects=True)
+
+            if response.status_code == 429:
+                print(f"Adzuna rate limited (429) - skipping")
+                return jobs_list
+            elif response.status_code != 200:
+                print(f"Adzuna returned status {response.status_code}")
                 continue
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            cards = soup.find_all('article', class_='a')
+
+            if not cards:
+                print(f"Adzuna: No cards found on page {page}")
+                continue
+
+            print(f"Adzuna: Found {len(cards)} cards on page {page}")
+
+            for card in cards:
+                try:
+                    # Job title is in a heading (h2/h3) inside the article
+                    heading = card.find(['h2', 'h3'])
+                    job_title = heading.text.strip() if heading else ""
+
+                    # Job URL is in the main <a> tag
+                    job_link = card.find('a', href=True)
+                    if not job_link:
+                        continue
+                    job_url = job_link['href']
+
+                    if not job_title:
+                        job_title = job_link.get('title', '') or job_link.text.strip()
+
+                    if not job_title:
+                        continue
+
+                    # Company name
+                    company_elem = card.find(class_='ui-company')
+                    job_company = company_elem.text.strip() if company_elem else "Not disclosed"
+
+                    # Location — clean up "+N" counters and extra whitespace from Adzuna HTML
+                    location_elem = card.find(class_='ui-location')
+                    if location_elem:
+                        job_loc = location_elem.text.strip()
+                        # Remove "+N" location counters (Adzuna shows "+1 location" etc.)
+                        job_loc = re.sub(r'\+\d+\s*location[s]?', '', job_loc, flags=re.IGNORECASE)
+                        # Collapse whitespace and strip
+                        job_loc = re.sub(r'\s+', ' ', job_loc).strip()
+                    else:
+                        job_loc = location
+
+                    jobs_list.extend(addDB(title, job_title, job_company, job_loc, "NA", job_url, 'Adzuna'))
+                except Exception as e:
+                    # print(f"Error parsing Adzuna card: {e}")
+                    continue
+
+        except requests.exceptions.RequestException as e:
+            print(f"Adzuna request error: {e}")
+            continue
+
+    print(f"Found {len(jobs_list)} jobs from Adzuna")
     return jobs_list
 
 
@@ -116,6 +206,90 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+
+def timesjob(title, location):
+    jobs_list = []
+
+    # Setup Chrome Options
+    options = webdriver.ChromeOptions()
+    # options.add_argument('--headless')  # Uncomment for background running
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--no-sandbox')
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+
+    driver = None
+    try:
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver.set_page_load_timeout(30)
+
+        # TimesJobs URL structure
+        url = f"https://www.timesjobs.com/job-search?searchBy=alnum&txtKeywords={title.replace(' ', '+')}&location={location.replace(' ', '+')}"
+        print(f"Opening TimesJobs: {url}")
+
+        driver.get(url)
+
+        # Wait for job results to load
+        try:
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "srp-job"))
+            )
+        except:
+            print("TimesJobs: Job results did not load in time")
+
+        # Scroll to trigger lazy loading
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
+
+        # Find job cards
+        cards = driver.find_elements(By.CLASS_NAME, "srp-job")
+        print(f"TimesJobs: Found {len(cards)} job cards")
+
+        for card in cards:
+            try:
+                # Job title and link
+                title_elem = card.find_element(By.CLASS_NAME, "jr-tit")
+                job_title = title_elem.text.strip()
+                job_url = title_elem.find_element(By.TAG_NAME, 'a').get_attribute('href')
+
+                # Company name
+                try:
+                    company_elem = card.find_element(By.CLASS_NAME, "srp-emp")
+                    job_company = company_elem.text.strip()
+                except:
+                    job_company = "Confidential"
+
+                # Location
+                try:
+                    loc_elem = card.find_element(By.CLASS_NAME, "srp-loc")
+                    job_location = loc_elem.text.strip()
+                except:
+                    job_location = location
+
+                # Salary (often hidden for non-registered users)
+                try:
+                    salary_elem = card.find_element(By.CLASS_NAME, "job-salary")
+                    job_salary = salary_elem.text.strip()
+                except:
+                    job_salary = "Not disclosed"
+
+                print(f"TimesJobs: {job_title} @ {job_company}")
+
+                jobs_list.extend(addDB(title, job_title, job_company, job_location, job_salary, job_url, 'TimesJobs'))
+
+            except Exception as e:
+                # print(f"Skipping TimesJobs card: {e}")
+                continue
+
+    except Exception as e:
+        print(f"TimesJobs error: {e}")
+    finally:
+        if driver:
+            driver.quit()
+
+    print(f"Found {len(jobs_list)} jobs from TimesJobs")
+    return jobs_list
+
 
 def jobRapido(title, location):
     jobs_list = []

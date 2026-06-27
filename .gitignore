@@ -1,5 +1,25 @@
+# Python
 /backend/venv
 
+# Environment
 /backend/.env
+.env
 
+# Vercel
 /backend/vercel.json
+
+# Documentation
+implementation.md
+*.md
+
+# Pycache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.claude
