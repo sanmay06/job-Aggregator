@@ -1,5 +1,6 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import ToastContainer from "./components/ToastContainer";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
@@ -32,6 +33,7 @@ function App () {
     ])
     return <>
         <RouterProvider router={router} />
+      <ToastContainer />
         
     </>
 }

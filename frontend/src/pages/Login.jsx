@@ -2,27 +2,31 @@ import React, { useState } from "react";
 import { useAuth } from "../Authorize";
 import { useNavigate } from "react-router-dom";
 import './styles.css';
+import Cookies from 'js-cookie';
+import FormInput from '../components/FormInput';
 import api from "../API";
 
 function Login() {
     const { login, user } = useAuth();
     const navigate = useNavigate();
     const [msg, setmsg] = useState(null);
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
 
     async function SignIn(event) {
         event.preventDefault();
-        const username = event.target.username.value;
-        const pass = event.target.password.value;
-        api.post("/login",{"username": username.trim(), "password": pass.trim()})
-        .then(response=>{
-                let ms = response.data.msg;
-                setmsg(ms)
-                if(ms === "success"){
-                    login(response.data.user)
-                    navigate('/home', {replace: true});
-                }
-        }
-        ).catch(e=> console.log(e))
+        api.post("/login", { username: username.trim(), password: password.trim() })
+          .then(response => {
+            const { msg, token, user } = response.data;
+            setmsg(msg);
+            if (msg === "success") {
+              login(user);
+              // Store JWT token for subsequent requests
+              Cookies.set('token', token, { expires: 365 * 10 });
+              navigate('/home', { replace: true });
+            }
+          })
+          .catch(e => console.log(e));
     }
 
     return (
@@ -30,9 +34,9 @@ function Login() {
             <form className="login-card" onSubmit={SignIn}>
                 <h1>Login</h1>
                 <label>Username or Email:</label>
-                <input type="text" name="username" required />
+                <FormInput type="text" name="username" value={username} onChange={e => setUsername(e.target.value)} required />
                 <label>Password:</label>
-                <input type="password" name="password" required />
+                <FormInput type="password" name="password" value={password} onChange={e => setPassword(e.target.value)} required />
                 <div hidden>
                     <label>Stay Signed in</label>
                 </div>

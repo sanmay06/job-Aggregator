@@ -168,9 +168,8 @@ function Table(props) {
     const indexOfFirstJob = indexOfLastJob - jobsPerPage;
 
     useEffect(() => {
-        // setCurrentJobs(jobs.slice(indexOfFirstJob, indexOfLastJob));
-        setCurrentJobs(jobs);
-    }, [jobs, indexOfFirstJob, indexOfLastJob]);
+        setCurrentJobs(jobs.slice(indexOfFirstJob, indexOfLastJob));
+    }, [jobs, currentPage, indexOfFirstJob, indexOfLastJob]);
 
 
     const nextPage = () => {

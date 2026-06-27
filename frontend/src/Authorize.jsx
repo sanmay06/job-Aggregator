@@ -18,6 +18,7 @@ export const AuthProvider = ({children}) => {
     const Logout = () => {
         setUser(null);
         Cookies.remove('user');
+        Cookies.remove('token');
     }
 
     return (<AuthorizeContext.Provider value={{user, login, Logout }}>

@@ -1,8 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 import os
 
 db = SQLAlchemy()
+# Password hashing utilities
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # ---------------------------------------------------------
@@ -10,12 +12,36 @@ db = SQLAlchemy()
 # ---------------------------------------------------------
 
 def db_init(app):
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    # Use SQLite file database by default (persists data), or DATABASE_URL if set
+    import os
+    # Fixed path - use backend/instance/test.db for consistency
+    base_dir = r"C:\Users\sanma\Documents\projects\job Aggregator\backend\instance"
+    os.makedirs(base_dir, exist_ok=True)
+    db_path = os.path.join(base_dir, 'test.db')
+    db_url = os.getenv("DATABASE_URL") or f"sqlite:///{db_path}"
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
     with app.app_context():
+        # Create tables if they don't exist (don't drop existing data)
         db.create_all()
+
+        # Migrate existing table columns to larger sizes (for PostgreSQL)
+        from sqlalchemy import text
+        try:
+            db.session.execute(text("ALTER TABLE jobs ALTER COLUMN job_title TYPE VARCHAR(255)"))
+            db.session.execute(text("ALTER TABLE jobs ALTER COLUMN link TYPE VARCHAR(512)"))
+            db.session.execute(text("ALTER TABLE jobs ALTER COLUMN title TYPE VARCHAR(200)"))
+            db.session.execute(text("ALTER TABLE jobs ALTER COLUMN companyname TYPE VARCHAR(200)"))
+            db.session.execute(text("ALTER TABLE jobs ALTER COLUMN location TYPE VARCHAR(100)"))
+            db.session.execute(text("ALTER TABLE jobs ALTER COLUMN website TYPE VARCHAR(50)"))
+            db.session.commit()
+            print("Database migration completed successfully")
+        except Exception as e:
+            db.session.rollback()
+            # Silently ignore - column might already be migrated or SQLite doesn't support ALTER
 
 
 # ---------------------------------------------------------
@@ -25,7 +51,7 @@ def db_init(app):
 class Login(db.Model):
     __tablename__ = 'login'
     username = db.Column(db.String(20), primary_key=True)
-    password = db.Column(db.String(20))
+    password = db.Column(db.String(255))
     email = db.Column(db.String(30))
 
 
@@ -47,15 +73,15 @@ class Profiles(db.Model):
 class Jobs(db.Model):
     __tablename__ = "jobs"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    job_title = db.Column(db.String(100))
-    link = db.Column(db.String(255), unique=True)
-    title = db.Column(db.String(100))
-    companyname = db.Column(db.String(100))
+    job_title = db.Column(db.String(255))
+    link = db.Column(db.String(512), unique=True)
+    title = db.Column(db.String(200))
+    companyname = db.Column(db.String(200))
     salary = db.Column(db.Integer)
     minsalary = db.Column(db.Integer)
     maxsalary = db.Column(db.Integer)
-    location = db.Column(db.String(50))
-    website = db.Column(db.String(30))
+    location = db.Column(db.String(100))
+    website = db.Column(db.String(50))
 
 
 # ---------------------------------------------------------
@@ -63,7 +89,9 @@ class Jobs(db.Model):
 # ---------------------------------------------------------
 
 def create_login(username, password, email):
-    entry = Login(username=username, password=password, email=email)
+    # Store a securely hashed password
+    hashed_pw = generate_password_hash(password)
+    entry = Login(username=username, password=hashed_pw, email=email)
     db.session.add(entry)
     db.session.commit()
 
@@ -95,10 +123,10 @@ def create_profile(data):
         location=data["location"],
         min=data["min"],
         max=data["max"],
-        internshalla=data["internshalla"],
-        adzuna=data["adzuna"],
-        timesjob=data["timesjob"],
-        jobrapido=data["jobrapido"]
+        internshalla=data.get("internshalla", False),
+        adzuna=data.get("adzuna", False),
+        timesjob=data.get("timesjob", False),
+        jobrapido=data.get("jobrapido", False)
     )
     db.session.add(p)
     db.session.commit()
@@ -169,19 +197,24 @@ def insert_job(job):
     if existing:
         return
 
+    # Truncate values to fit column limits
     j = Jobs(
-        job_title=job["job_title"],
-        link=job["link"],
-        title=job["title"],
-        companyname=job["companyname"],
+        job_title=job["job_title"][:255] if job["job_title"] else None,
+        link=job["link"][:512] if job["link"] else None,
+        title=job["title"][:200] if job["title"] else None,
+        companyname=job["companyname"][:200] if job["companyname"] else None,
         salary=job["salary"],
         minsalary=job["minsalary"],
         maxsalary=job["maxsalary"],
-        location=job["location"],
-        website=job["website"]
+        location=(job["location"][:100] if job["location"] else "")[:100],
+        website=(job["website"][:50] if job["website"] else "")[:50]
     )
     db.session.add(j)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error inserting job: {e}")
 
 
 def count_jobs(filters):

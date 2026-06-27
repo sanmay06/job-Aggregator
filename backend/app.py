@@ -2,7 +2,7 @@ from flask import Flask, request
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-from jobs import internshala, adzuna, jobRapido
+from jobs import internshala, adzuna, jobRapido, timesjob
 
 import db  # AUTO-SWITCHING DB BACKEND
 
@@ -13,7 +13,55 @@ from db import (
 )
 
 load_dotenv()
+# Password verification utility
+from werkzeug.security import check_password_hash
+
+# JWT and security utilities
+import jwt
+from datetime import datetime, timedelta
+from functools import wraps
+import os
+
+# Flask-Limiter for rate limiting
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# JWT and rate limiter will be configured after Flask app creation
+
+def generate_token(username):
+    payload = {
+        "sub": username,
+        "exp": datetime.utcnow() + timedelta(hours=2)
+    }
+    return jwt.encode(payload, app.config["SECRET_KEY"], algorithm="HS256")
+
+def decode_token(token):
+    return jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+
+def jwt_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        auth = request.headers.get("Authorization", "")
+        if not auth.startswith("Bearer "):
+            return {"msg": "Missing token"}, 401
+        token = auth.split()[1]
+        try:
+            payload = decode_token(token)
+            request.user = payload["sub"]
+        except jwt.ExpiredSignatureError:
+            return {"msg": "Token expired"}, 401
+        except jwt.InvalidTokenError:
+            return {"msg": "Invalid token"}, 401
+        return fn(*args, **kwargs)
+    return wrapper
 app = Flask(__name__)
+
+# Configure secret key for JWT (fallback for development)
+app.config["SECRET_KEY"] = os.getenv("JWT_SECRET", "dev-secret-key")
+
+# Initialise rate limiter (5 requests per minute for auth endpoints)
+limiter = Limiter(key_func=get_remote_address)
+limiter.init_app(app)
 CORS(app)
 
 db_init(app)
@@ -28,8 +76,13 @@ def home():
 # REGISTER
 # ------------------------------------------
 @app.post("/reg")
+@limiter.limit("5 per minute")
 def register():
     data = request.get_json()
+    # Basic validation
+    required = ["username", "password", "email"]
+    if not data or not all(k in data and data[k] for k in required):
+        return {"msg": "username, password, and email required"}, 400
     create_login(data["username"], data["password"], data["email"])
     return {"msg": "created successfully"}, 201
 
@@ -38,12 +91,17 @@ def register():
 # LOGIN
 # ------------------------------------------
 @app.post("/login")
+@limiter.limit("5 per minute")
 def login():
     data = request.get_json()
+    # Basic input validation
+    if not data or not data.get("username") or not data.get("password"):
+        return {"msg": "username and password required"}, 400
     user = find_login(data["username"])
 
-    if user and user["password"] == data["password"]:
-        return {"msg": "success", "user": user["username"]}, 200
+    if user and check_password_hash(user["password"], data["password"]):
+        token = generate_token(user["username"])
+        return {"msg": "success", "token": token, "user": user["username"]}, 200
 
     return {"msg": "Wrong password or username"}, 401
 
@@ -52,6 +110,7 @@ def login():
 # GET PROFILES
 # ------------------------------------------
 @app.get("/getprofiles")
+@jwt_required
 def getProfiles():
     user = request.args.get("user")
     profiles = get_profiles(user)
@@ -63,6 +122,7 @@ def getProfiles():
 # GET PROFILE
 # ------------------------------------------
 @app.get("/profile/<name>")
+@jwt_required
 def getProfile(name):
     user = request.args.get("user")
     profile = get_profile(user, name)
@@ -77,19 +137,24 @@ def getProfile(name):
 # CREATE PROFILE
 # ------------------------------------------
 @app.post("/profile/create")
+@jwt_required
 def postProfile():
     data = request.get_json()
     sites = data["sites"]
 
+    # Use the username from the JWT token (set by jwt_required)
+    username = request.user
+
     profile_data = {
         "name": data["name"],
-        "user": data["user"],
+        "user": username,
         "search": data["search"],
         "location": data["location"],
         "min": data["min"],
         "max": data["max"],
         "internshalla": "Internshalla" in sites,
         "adzuna": "Adzuna" in sites,
+        "timesjob": "TimesJobs" in sites,
         "jobrapido": "JobRapido" in sites
     }
 
@@ -101,8 +166,10 @@ def postProfile():
 # UPDATE PROFILE
 # ------------------------------------------
 @app.post("/profile/<profile>/update")
+@jwt_required
 def updateProfile(profile):
     data = request.get_json()
+    data["user"] = request.user
     # print("[DEBUG] updateProfile received data:", data)
     sites = data["sites"]
 
@@ -114,6 +181,7 @@ def updateProfile(profile):
         "max": data["max"],
         "internshalla": "Internshalla" in sites,
         "adzuna": "Adzuna" in sites,
+        "timesjob": "TimesJobs" in sites,
         "jobrapido": "JobRapido" in sites
     }
 
@@ -129,6 +197,7 @@ def updateProfile(profile):
 # SCRAPING
 # ------------------------------------------
 @app.get('/scrape_jobs/<site>/<profile>')
+@jwt_required
 def scrape(site, profile):
     username = request.args.get("user")
     p = get_profile(username, profile)
@@ -146,6 +215,8 @@ def scrape(site, profile):
         jobs = internshala(p["search"], p["location"])
     elif site == "adzuna":
         jobs = adzuna(p["search"], p["location"])
+    elif site == "timesjob":
+        jobs = timesjob(p["search"], p["location"])
     else:
         jobs = jobRapido(p["search"], p["location"])
 
@@ -160,6 +231,7 @@ def scrape(site, profile):
 # PAGINATION
 # ------------------------------------------
 @app.get("/get_pages/<profile>")
+@jwt_required
 def pages(profile):
     username = request.args.get("user")
     p = get_profile(username, profile)
@@ -171,6 +243,7 @@ def pages(profile):
             w for w, enabled in {
                 "Internshala": p["internshalla"],
                 "Adzuna": p["adzuna"],
+                "TimesJobs": p["timesjob"],
                 "JobRapido": p["jobrapido"],
             }.items() if enabled
         ]
@@ -183,6 +256,7 @@ def pages(profile):
 
 
 @app.get("/fetch_jobs/<profile>/<page>")
+@jwt_required
 def fetchJobs(profile, page):
     username = request.args.get("user")
     page = int(page)
